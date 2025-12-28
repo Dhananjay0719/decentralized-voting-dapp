@@ -7,7 +7,7 @@ This project demonstrates real-world Web3 engineering, including smart contract 
 ## Live Demo
 
 Frontend (Vercel):
-https://votechain-decentralized-voting-dapp-9za3velg7.vercel.app/
+https://votechain-decentralized-voting-dapp.vercel.app/
 
 Smart Contract (Sepolia Etherscan):
 https://sepolia.etherscan.io/address/0xE09D4d3f5399f8d529C54379433cfEFE586682CF
