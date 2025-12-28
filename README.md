@@ -144,5 +144,3 @@ GitHub: https://github.com/Dhananjay0719
 ## License
 
 MIT License
-
-Project Status: Completed, Deployed, Production-ready
