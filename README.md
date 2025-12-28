@@ -104,7 +104,7 @@ npx hardhat test
 ### Voting Started (Active Election State)
 ![Voting Started](screenshots/voting-start.png)
 
-### Party Registration Revert During Election
+### Double Vote Revert During Election
 ![Revert Handling](screenshots/voting-revert.png)
 
 ### Election Result (Winner / Tie Handling)
