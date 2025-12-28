@@ -30,13 +30,9 @@ export default function App() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState("");
 
-  /*Wallet Connection*/
-
+  /* Wallet Connection */
   async function connectWallet() {
-    if (!window.ethereum) {
-      alert("Please install MetaMask");
-      return;
-    }
+    if (!window.ethereum) return;
 
     const provider = new ethers.BrowserProvider(window.ethereum);
     await provider.send("eth_requestAccounts", []);
@@ -61,7 +57,6 @@ export default function App() {
   }
 
   /* Load Parties */
-
   async function loadParties(c) {
     const count = await c.getPartiesCount();
     const list = [];
@@ -79,7 +74,6 @@ export default function App() {
   }
 
   /* Load Results */
-
   async function loadResult(c) {
     try {
       const result = await c.getWinner();
@@ -93,6 +87,7 @@ export default function App() {
     }
   }
 
+  /* Initial Load */
   useEffect(() => {
     if (contract) {
       loadParties(contract);
@@ -100,8 +95,35 @@ export default function App() {
     }
   }, [contract, votingActive]);
 
-  /* Admin Funcs */
+  /* Event Listeners */
+  useEffect(() => {
+    if (!contract) return;
 
+    const onPartyRegistered = () => loadParties(contract);
+    const onVoteCast = () => loadParties(contract);
+    const onVotingStarted = () => {
+      setVotingActive(true);
+      setWinner(null);
+    };
+    const onVotingEnded = () => {
+      setVotingActive(false);
+      loadResult(contract);
+    };
+
+    contract.on("PartyRegistered", onPartyRegistered);
+    contract.on("VoteCast", onVoteCast);
+    contract.on("VotingStarted", onVotingStarted);
+    contract.on("VotingEnded", onVotingEnded);
+
+    return () => {
+      contract.off("PartyRegistered", onPartyRegistered);
+      contract.off("VoteCast", onVoteCast);
+      contract.off("VotingStarted", onVotingStarted);
+      contract.off("VotingEnded", onVotingEnded);
+    };
+  }, [contract]);
+
+  /* Admin Functions */
   async function registerParty() {
     if (!partyName || votingActive) return;
 
@@ -111,7 +133,6 @@ export default function App() {
       const tx = await contract.registerParty(partyName);
       await tx.wait();
       setPartyName("");
-      loadParties(contract);
     } catch (err) {
       setError(getRevertMessage(err));
     } finally {
@@ -125,8 +146,6 @@ export default function App() {
       setLoading("Starting voting...");
       const tx = await contract.startVoting();
       await tx.wait();
-      setVotingActive(true);
-      setWinner(null);
     } catch (err) {
       setError(getRevertMessage(err));
     } finally {
@@ -140,8 +159,6 @@ export default function App() {
       setLoading("Ending voting...");
       const tx = await contract.endVoting();
       await tx.wait();
-      setVotingActive(false);
-      loadResult(contract);
     } catch (err) {
       setError(getRevertMessage(err));
     } finally {
@@ -149,8 +166,7 @@ export default function App() {
     }
   }
 
-  /* Voter Funcs */
-
+  /* Voter Functions */
   async function registerVoter() {
     if (!age) return;
 
@@ -173,7 +189,6 @@ export default function App() {
       setLoading("Casting vote...");
       const tx = await contract.castVote(index);
       await tx.wait();
-      loadParties(contract);
     } catch (err) {
       setError(getRevertMessage(err));
     } finally {
@@ -182,12 +197,9 @@ export default function App() {
   }
 
   /* UI */
-
   return (
     <div className="min-h-screen bg-gray-100 p-10 flex flex-col items-center">
-      <h1 className="text-3xl font-bold mb-4">
-        🗳️ Decentralized Voting dApp
-      </h1>
+      <h1 className="text-3xl font-bold mb-4">🗳️ Decentralized Voting dApp</h1>
 
       {!account ? (
         <button
@@ -200,19 +212,9 @@ export default function App() {
         <>
           <p className="text-xs font-mono mb-4">{account}</p>
 
-          {loading && (
-            <p className="mb-3 text-blue-600 font-semibold">
-              ⏳ {loading}
-            </p>
-          )}
+          {loading && <p className="mb-3 text-blue-600">⏳ {loading}</p>}
+          {error && <p className="mb-3 text-red-600">⚠️ {error}</p>}
 
-          {error && (
-            <p className="mb-3 text-red-600 font-semibold">
-              ⚠️ {error}
-            </p>
-          )}
-
-          {/* ADMIN PANEL */}
           {isAdmin && (
             <div className="bg-white p-4 rounded shadow w-full max-w-md mb-6">
               <h2 className="font-semibold mb-3">Admin Panel</h2>
@@ -228,9 +230,7 @@ export default function App() {
                 disabled={votingActive || loading}
                 onClick={registerParty}
                 className={`w-full py-2 rounded text-white mb-3 ${
-                  votingActive
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-green-600 hover:bg-green-700"
+                  votingActive ? "bg-gray-400" : "bg-green-600"
                 }`}
               >
                 Register Party
@@ -254,14 +254,11 @@ export default function App() {
             </div>
           )}
 
-          {/* VOTER REGISTRATION */}
           <div className="bg-white p-4 rounded shadow w-full max-w-md mb-6">
             <h2 className="font-semibold mb-3">Voter Registration</h2>
 
             {isRegisteredVoter ? (
-              <p className="text-green-600">
-                ✅ You are registered to vote
-              </p>
+              <p className="text-green-600">✅ You are registered</p>
             ) : (
               <>
                 <input
@@ -281,62 +278,46 @@ export default function App() {
             )}
           </div>
 
-          {/* PARTIES & VOTING */}
-          <h2 className="text-xl font-semibold mb-4">
-            Registered Parties
-          </h2>
+          <h2 className="text-xl font-semibold mb-4">Registered Parties</h2>
 
-          {parties.length === 0 ? (
-            <p>No parties registered.</p>
-          ) : (
-            <div className="grid gap-4 w-full max-w-md mb-8">
-              {parties.map((party) => (
-                <div
-                  key={party.index}
-                  className="bg-white p-4 rounded shadow flex justify-between items-center"
-                >
-                  <div>
-                    <p className="font-semibold">{party.name}</p>
-                    <p className="text-sm text-gray-500">
-                      Votes: {party.votes.toString()}
-                    </p>
-                  </div>
-
-                  <button
-                    disabled={
-                      !votingActive ||
-                      !isRegisteredVoter ||
-                      loading
-                    }
-                    onClick={() => castVote(party.index)}
-                    className={`px-3 py-1 rounded text-white ${
-                      votingActive && isRegisteredVoter
-                        ? "bg-green-600 hover:bg-green-700"
-                        : "bg-gray-400 cursor-not-allowed"
-                    }`}
-                  >
-                    Vote
-                  </button>
+          <div className="grid gap-4 w-full max-w-md mb-8">
+            {parties.map((party) => (
+              <div
+                key={party.index}
+                className="bg-white p-4 rounded shadow flex justify-between items-center"
+              >
+                <div>
+                  <p className="font-semibold">{party.name}</p>
+                  <p className="text-sm text-gray-500">
+                    Votes: {party.votes.toString()}
+                  </p>
                 </div>
-              ))}
-            </div>
-          )}
 
-          {/* RESULTS */}
-          {!votingActive && winner && (
+                <button
+                  disabled={!votingActive || !isRegisteredVoter || loading}
+                  onClick={() => castVote(party.index)}
+                  className={`px-3 py-1 rounded text-white ${
+                    votingActive && isRegisteredVoter
+                      ? "bg-green-600"
+                      : "bg-gray-400"
+                  }`}
+                >
+                  Vote
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {!votingActive && winner && (isRegisteredVoter || isAdmin) && (
             <div className="bg-white p-4 rounded shadow w-full max-w-md">
-              <h2 className="text-xl font-semibold mb-2">
-                🏁 Election Result
-              </h2>
+              <h2 className="text-xl font-semibold mb-2">🏁 Election Result</h2>
 
               {winner.isTie ? (
-                <p className="text-orange-600 font-semibold">
-                  🤝 Election ended in a tie (Votes: {winner.votes.toString()})
+                <p className="text-orange-600">
+                  🤝 Election ended in a tie ({winner.votes.toString()} votes)
                 </p>
               ) : winner.name === "" ? (
-                <p className="text-gray-600">
-                  No votes were cast.
-                </p>
+                <p>No votes were cast.</p>
               ) : (
                 <p className="text-green-700 font-semibold">
                   🏆 Winner: {winner.name} ({winner.votes.toString()} votes)
