@@ -96,6 +96,30 @@ npx hardhat test
 - Deployment: Vercel
 - Verification: Etherscan
 
+## Screenshots
+
+### Admin Panel (Party Registration & Election Control)
+![Admin Panel](screenshots/admin-panel.png)
+
+### Voting Started (Active Election State)
+![Voting Started](screenshots/voting-start.png)
+
+### Party Registration Revert During Election
+![Revert Handling](screenshots/voting-revert.png)
+
+### Election Result (Winner / Tie Handling)
+![Election Result](screenshots/election-result.png)
+
+### Tie Scenario Result
+![Tie Result](screenshots/tie-results.png)
+
+### Smart Contract Tests (Hardhat)
+![Hardhat Tests](screenshots/hardhat-tests.png)
+
+### Deployment & Contract Verification
+![Deployment](screenshots/deployment-verification.png)
+
+
 ## Key Engineering Decisions
 
 - Results exposed via view functions instead of transactions
